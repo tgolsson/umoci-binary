@@ -34,7 +34,6 @@ jobs:
           for t in $new_tags; do
             echo "[check] $t"
             b=$(echo "${APP_VERSION}" | grep -w ${t} | wc -l)
-            b=0
             if [[ $b == 0 ]]; then
               echo "::group::[Build] $t"
               git clone -q --depth=1 --branch $t --progress $APP_REPO
@@ -69,11 +68,11 @@ jobs:
               cat ./umoci/bin/umoci-{darwin,linux}-{amd64,arm64}.{md5,sha256} > CHECKSUMS.txt
               echo "::endgroup::"
               popd
-          #     break
-          #   else
-          #     echo "::debug::[skip] $t"
-          #   fi
-          # done
+              break
+            else
+              echo "::debug::[skip] $t"
+            fi
+          done
       - name: Push changes
         uses: ad-m/github-push-action@master
         if: ${{ steps.build_umoci.outputs.ADD_TAG != '' }}
