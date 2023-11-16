@@ -33,11 +33,9 @@ jobs:
           b=$(echo "${APP_VERSION}" | grep -w ${t} | wc -l)
           if [[ $b == 0 ]]; then
             echo "::group::[Build] $t"
-            git clone -q --depth=1 --branch $t --progress $APP_REPO
+            git clone -q --depth=1 $APP_REPO
             pushd ${APP}
-            git checkout -b $t $t
-            git branch
-
+            git checkout $t
             # golang:1.19.2-alpine3.16
             docker pull golang:1.19.2-alpine3.16
 
