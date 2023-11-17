@@ -13,8 +13,7 @@ on:
 
 
 jobs:
-  build_main:
-    depends_on: test
+  test:
     runs-on: macos-latest
     steps:
       - name: Checkout
