@@ -69,34 +69,6 @@ jobs:
             else
             echo "::debug::[skip] $t"
           fi
-      - name: Push changes
-        uses: ad-m/github-push-action@master
-        if: ${{ steps.build_umoci.outputs.ADD_TAG != '' }}
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          branch: ${{ github.ref }}
-      - name: Release
-        uses: softprops/action-gh-release@v1
-        if: ${{ steps.build_umoci.outputs.ADD_TAG != '' }}
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          tag_name: "nightly"
-          prerelease: true
-          files: |
-            ./umoci/bin/umoci-linux-amd64
-            ./umoci/bin/umoci-linux-amd64.md5
-            ./umoci/bin/umoci-linux-amd64.sha256
-            ./umoci/bin/umoci-linux-arm64
-            ./umoci/bin/umoci-linux-arm64.md5
-            ./umoci/bin/umoci-linux-arm64.sha256
-            ./umoci/bin/umoci-darwin-amd64
-            ./umoci/bin/umoci-darwin-amd64.md5
-            ./umoci/bin/umoci-darwin-amd64.sha256
-            ./umoci/bin/umoci-darwin-arm64
-            ./umoci/bin/umoci-darwin-arm64.md5
-            ./umoci/bin/umoci-darwin-arm64.sha256
-          body_path: ./CHECKSUMS.txt
-
 
   build_main:
     needs: test
