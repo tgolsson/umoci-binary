@@ -30,7 +30,7 @@ jobs:
           t="$(git ls-remote $APP_REPO refs/heads/main | cut -f1)"
 
           echo "[check] $t"
-          b=$(echo "${APP_VERSION}" | grep -w ${t} | wc -l)
+          b=$(echo "${APP_VERSION}" | grep -w ${t} | wc -l | xargs echo -n)
           if [[ $b == 0 ]]; then
             echo "::group::[Build] $t"
             git clone -q --depth=1 $APP_REPO
