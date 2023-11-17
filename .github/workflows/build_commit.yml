@@ -99,7 +99,7 @@ jobs:
 
 
   build_main:
-    depends_on: test
+    needs: test
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
