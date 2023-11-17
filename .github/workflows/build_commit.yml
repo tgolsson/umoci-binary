@@ -14,6 +14,93 @@ on:
 
 jobs:
   build_main:
+    depends_on: test
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Build Umoci
+        id: build_umoci
+        run: |
+          set -eux
+          APP=umoci
+          APP_VERSION=$(cat version.txt)
+          APP_REPO="https://github.com/opencontainers/umoci.git"
+
+          ADD_TAG=""
+          t="$(git ls-remote $APP_REPO refs/heads/main | cut -f1)"
+
+          echo "[check] $t"
+          b=$(echo "${APP_VERSION}" | grep -w ${t} | wc -l)
+          if [[ $b == 0 ]]; then
+            echo "::group::[Build] $t"
+            git clone -q --depth=1 $APP_REPO
+            pushd ${APP}
+            git checkout $t
+            # golang:1.19.2-alpine3.16
+            docker pull golang:1.19.2-alpine3.16
+
+            docker run --rm -t -v $PWD:/build golang:1.19.2-alpine3.16 sh -c "apk update && apk add gpgme btrfs-progs-dev llvm13-dev gcc musl-dev && cd /build && CGO_ENABLE=0 GO111MODULE=on GOOS=linux GOARCH=amd64 go build -mod=vendor '-buildmode=pie' -ldflags='-linkmode=external -extldflags=-static' -gcflags '' -o ./bin/umoci-linux-amd64 ./cmd/umoci && md5sum ./bin/umoci-linux-amd64 > ./bin/umoci-linux-amd64.md5 && sha256sum ./bin/umoci-linux-amd64 > ./bin/umoci-linux-amd64.sha256"
+
+            docker run --rm -t -v $PWD:/build golang:1.19.2-alpine3.16 sh -c "apk update && apk add gpgme btrfs-progs-dev llvm13-dev gcc musl-dev && cd /build && CGO_ENABLE=0 GO111MODULE=on GOOS=linux GOARCH=arm64 go build -mod=vendor -gcflags '' -o ./bin/umoci-linux-arm64 ./cmd/umoci && md5sum ./bin/umoci-linux-arm64 > ./bin/umoci-linux-arm64.md5 && sha256sum ./bin/umoci-linux-arm64 > ./bin/umoci-linux-arm64.sha256"
+
+            docker run --rm -t -v $PWD:/build golang:1.19.2-alpine3.16 sh -c "apk update && apk add gpgme btrfs-progs-dev llvm13-dev gcc musl-dev && cd /build && CGO_ENABLE=0  GOOS=darwin GOARCH=amd64 go build -tags='' -buildvcs=false -mod=vendor -ldflags='' -gcflags '' -o ./bin/umoci-darwin-amd64 ./cmd/umoci && md5sum ./bin/umoci-darwin-amd64 > ./bin/umoci-darwin-amd64.md5 && sha256sum ./bin/umoci-darwin-amd64 > ./bin/umoci-darwin-amd64.sha256"
+
+            docker run --rm -t -v $PWD:/build golang:1.19.2-alpine3.16 sh -c "apk update && apk add gpgme btrfs-progs-dev llvm13-dev gcc musl-dev && cd /build && CGO_ENABLE=0 GO111MODULE=on GOOS=darwin GOARCH=arm64 go build -mod=vendor -ldflags='' -gcflags '' -o ./bin/umoci-darwin-arm64 ./cmd/umoci && md5sum ./bin/umoci-darwin-arm64 > ./bin/umoci-darwin-arm64.md5 && sha256sum ./bin/umoci-darwin-arm64 > ./bin/umoci-darwin-arm64.sha256"
+
+            ./bin/umoci-darwin-amd64 --help
+
+            ls -al bin/
+            cd ../
+            ls -al ./
+            ADD_TAG=$t
+
+            echo "::debug::[Push file]"
+            echo "${t}" >> version.txt
+            git config --global user.email "me@sbg.dev"
+            git config --global user.name "Tom Solberg"
+            git config --global --add safe.directory /github/workspace
+            git add version.txt
+            git commit -m "$APP $ADD_TAG (Github Actions Automatically Built in `date +"%Y-%m-%d %H:%M"`)"
+            echo "ADD_TAG=${ADD_TAG}" >> $GITHUB_OUTPUT
+            cat ./umoci/bin/umoci-{darwin,linux}-{amd64,arm64}.{md5,sha256} > CHECKSUMS.txt
+            echo "::endgroup::"
+            popd
+            break
+            else
+            echo "::debug::[skip] $t"
+          fi
+      - name: Push changes
+        uses: ad-m/github-push-action@master
+        if: ${{ steps.build_umoci.outputs.ADD_TAG != '' }}
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ github.ref }}
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        if: ${{ steps.build_umoci.outputs.ADD_TAG != '' }}
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          tag_name: "nightly"
+          prerelease: true
+          files: |
+            ./umoci/bin/umoci-linux-amd64
+            ./umoci/bin/umoci-linux-amd64.md5
+            ./umoci/bin/umoci-linux-amd64.sha256
+            ./umoci/bin/umoci-linux-arm64
+            ./umoci/bin/umoci-linux-arm64.md5
+            ./umoci/bin/umoci-linux-arm64.sha256
+            ./umoci/bin/umoci-darwin-amd64
+            ./umoci/bin/umoci-darwin-amd64.md5
+            ./umoci/bin/umoci-darwin-amd64.sha256
+            ./umoci/bin/umoci-darwin-arm64
+            ./umoci/bin/umoci-darwin-arm64.md5
+            ./umoci/bin/umoci-darwin-arm64.sha256
+          body_path: ./CHECKSUMS.txt
+
+
+  build_main:
+    depends_on: test
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
