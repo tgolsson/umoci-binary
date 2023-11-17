@@ -78,6 +78,7 @@ jobs:
         if: ${{ steps.build_umoci.outputs.ADD_TAG != '' }}
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+          tag_name: "nightly"
           prerelease: true
           files: |
             ./umoci/bin/umoci-linux-amd64
