@@ -1,17 +1,22 @@
 # umoci-binary
 
-[![Build](https://github.com/tgolsson/umoci-binary/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/tolsson/umoci-binary/actions/workflows/build.yml)
+Builds [umoci](https://github.com/opencontainers/umoci) for Linux and macOS,
+with native amd64 and arm64 build and smoke-test jobs.
 
-Generate [umoci](https://github.com/opencontainers/umoci) binaries.
+Official upstream releases now provide Linux binaries. This repository remains
+useful for macOS binaries, which upstream does not publish.
 
-## Useage
+The Build workflow tests `v0.6.0` on pushes and pull requests. Dispatch it with a
+release tag or commit and `publish=true` to publish all four verified binaries.
+All jobs check out the same resolved upstream commit. Release assets include
+SHA-256 sidecars and `SHA256SUMS`; existing releases are never overwritten.
 
-The [release](https://github.com/tgolsson/umoci-binary/releases) version of the project is the same as the [umoci](https://github.com/opencontainers/umoci/releases) release version, which can be viewed directly on the [ release](https://github.com/tgolsson/umoci-binary/releases) page directly.
+The manually dispatched Build Nightly workflow builds an upstream branch or
+commit and publishes `commit-<resolved-sha>` prereleases. It does not run on a
+schedule. The old `version.txt` file is historical; releases themselves track
+what has been published.
 
 ```bash
-version=v1.6.2
-arch=amd64
-[ -f /usr/bin/umoci ] && mv /usr/bin/umoci{,_src}
-wget https://github.com/tgolsson/umoci-binary/releases/download/${version}/umoci-linux-${arch} -O /usr/bin/umoci
-chmod +x /usr/bin/umoci
+gh workflow run build.yml --repo tgolsson/umoci-binary \
+  -f source_ref=v0.6.0 -F publish=true
 ```
